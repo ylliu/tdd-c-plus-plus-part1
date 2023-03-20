@@ -1,6 +1,6 @@
 #include "../Test.h"
 
 int main() {
-    MereTDD::runTests();
+    MereTDD::runTests(std::cout);
     return 0;
 }

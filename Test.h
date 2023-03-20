@@ -52,18 +52,16 @@ namespace MereTDD {
         return tests;
     }
 
-    inline int  runTests() {
-
-        std::cout << "Running "
-                  << getTests().size()
-                  << " tests\n";
+    inline int runTests(std::ostream &output) {
+        output << "Running "
+               << getTests().size()
+               << " tests\n";
 
         int numPassed = 0;
         int numFailed = 0;
         for (auto *test: getTests()) {
-            std::cout << "---------------\n"
-                      << test->name()
-                      << std::endl;
+            output << "---------------\n"
+                   << test->name() << "\n";
             try {
                 test->run();
             }
@@ -72,27 +70,21 @@ namespace MereTDD {
             }
             if (test->passed()) {
                 ++numPassed;
-                std::cout << "Passed"
-                          << std::endl;
+                output << "Passed\n";
             } else {
                 ++numFailed;
-                std::cout << "Failed\n"
-                          << test->reason()
-                          << std::endl;
+                output << "Failed\n"
+                       << test->reason()
+                       << "\n";
             }
         }
 
-        std::cout << "---------------\n";
-        if (numFailed == 0)
-        {
-            std::cout << "All tests passed."
-                      << std::endl;
-        }
-        else
-        {
-            std::cout << "Tests passed: " << numPassed
-                      << "\nTests failed: " << numFailed
-                      << std::endl;
+        output << "---------------\n";
+        if (numFailed == 0) {
+            output << "All tests passed.\n";
+        } else {
+            output << "Tests passed: " << numPassed
+                   << "\nTests failed: " << numFailed << "\n";
         }
         return numFailed;
     }
