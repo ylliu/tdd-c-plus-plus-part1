@@ -1,10 +1,11 @@
+#include "Test.h"
 #include <iostream>
 
-void testCanBeCreated() {
-    std::cout << "testCanBeCreated" << std::endl;
+TEST {
+    std::cout << mName << std::endl;
 }
 
 int main() {
-    testCanBeCreated();
+    test();
     return 0;
 }
