@@ -1,6 +1,5 @@
 #include "../Test.h"
 #include <iostream>
-
 TEST("Test can be created"){
 
 };

@@ -74,6 +74,33 @@ namespace MereTDD {
     private:
         std::string mExType;
     };
+
+    class ConfirmException
+    {
+    public:
+        ConfirmException () = default;
+        virtual ~ConfirmException () = default;
+        std::string_view reason () const
+        {
+            return mReason;
+        }
+    protected:
+        std::string mReason;
+    };
+
+    class BoolConfirmException : public ConfirmException
+    {
+    public:
+        BoolConfirmException (bool expected, int line)
+        {
+            mReason =  "Confirm failed on line ";
+            mReason += std::to_string(line) + "\n";
+            mReason += "    Expected: ";
+            mReason += expected ? "true" : "false";
+        }
+    };
+
+
     inline std::vector<TestBase *> &getTests() {
         static std::vector<TestBase *> tests;
         return tests;
@@ -98,6 +125,10 @@ namespace MereTDD {
                 message += ex.exType();
                 message += " was not thrown.";
                 test->setFailed(message);
+            }
+            catch (ConfirmException const & ex)
+            {
+                test->setFailed(ex.reason());
             }
             catch (...){
                 test->setFailed("Unexpected exception thrown.");
@@ -150,7 +181,8 @@ namespace MereTDD {
 } // namespace MereTDD
 
 
-#define TEST(testName) \
+#define TEST( testName ) \
+namespace { \
 class MERETDD_CLASS : public MereTDD::TestBase \
 { \
 public: \
@@ -161,10 +193,12 @@ public: \
     } \
     void run () override; \
 }; \
+} /* end of unnamed namespace */ \
 MERETDD_CLASS MERETDD_INSTANCE(testName); \
 void MERETDD_CLASS::run ()
 
 #define TEST_EX( testName, exceptionType ) \
+namespace { \
 class MERETDD_CLASS : public MereTDD::TestBase \
 { \
 public: \
@@ -187,7 +221,19 @@ public: \
     } \
     void run () override; \
 }; \
+} /* end of unnamed namespace */ \
 MERETDD_CLASS MERETDD_INSTANCE(testName); \
 void MERETDD_CLASS::run ()
+
+#define CONFIRM_FALSE( actual ) \
+if (actual) \
+{ \
+    throw MereTDD::BoolConfirmException(false, __LINE__); \
+}
+#define CONFIRM_TRUE( actual ) \
+if (not actual) \
+{ \
+    throw MereTDD::BoolConfirmException(true, __LINE__); \
+}
 
 #endif // MERETDD_TEST_H
