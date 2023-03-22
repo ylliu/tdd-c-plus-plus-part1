@@ -118,10 +118,13 @@ namespace MereTDD {
     class ActualConfirmException : public ConfirmException
     {
     public:
-        ActualConfirmException (int expected, int actual, int line)
-                :ConfirmException(line),
-                mExpected(std::to_string(expected)),
-                  mActual(std::to_string(actual))
+        ActualConfirmException (
+                std::string_view expected,
+                std::string_view actual,
+                int line)
+                : ConfirmException(line),
+                  mExpected(expected),
+                  mActual(actual)
         {
             formatReason();
         }
@@ -222,16 +225,46 @@ namespace MereTDD {
         return numFailed;
     }
 
-    inline void confirm (
-            int expected,
-            int actual,
+    template <typename T>
+    void confirm (
+            T const & expected,
+            T const & actual,
             int line)
     {
         if (actual != expected)
         {
-            throw ActualConfirmException(expected, actual, line);
+            throw ActualConfirmException(
+                    std::to_string(expected),
+                    std::to_string(actual),
+                    line);
         }
     }
+
+    inline void confirm (
+            std::string_view expected,
+            std::string_view actual,
+            int line)
+    {
+        if (actual != expected)
+        {
+            throw ActualConfirmException(
+                    expected,
+                    actual,
+                    line);
+        }
+    }
+
+    inline void confirm (
+            std::string const & expected,
+            std::string const & actual,
+            int line)
+    {
+        confirm(
+                std::string_view(expected),
+                std::string_view(actual),
+                line);
+    }
+
 } // namespace MereTDD
 
 
