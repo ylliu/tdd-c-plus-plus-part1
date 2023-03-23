@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <source_location>
 
 #define MERETDD_CLASS_FINAL(line) Test ## line
 #define MERETDD_CLASS_RELAY(line) MERETDD_CLASS_FINAL( line )
@@ -15,10 +16,21 @@
 
 
 namespace MereTDD {
+
+    class TestBase;
+
+    inline std::vector<TestBase *> & getTests ()
+    {
+        static std::vector<TestBase *> tests;
+        return tests;
+    }
+
     class TestBase {
     public:
         TestBase(std::string_view name)
-                : mName(name), mPassed(true),mConfirmLocation(-1) {}
+                : mName(name), mPassed(true),mConfirmLocation(-1) {
+            getTests().push_back(this);
+        }
 
         virtual ~TestBase() = default;
 
@@ -83,6 +95,32 @@ namespace MereTDD {
         std::string mExType;
     };
 
+    template <typename ExceptionT>
+    class TestExBase : public TestBase
+    {
+    public:
+        TestExBase (std::string_view name,
+                    std::string_view exceptionName)
+                : TestBase(name), mExceptionName(exceptionName)
+        { }
+        void runEx () override
+        {
+            try
+            {
+                run();
+            }
+            catch (ExceptionT const &)
+            {
+                return;
+            }
+            throw MissingException(mExceptionName);
+        }
+    private:
+        std::string mExceptionName;
+    };
+
+
+
     class ConfirmException
     {
     public:
@@ -139,10 +177,7 @@ namespace MereTDD {
     };
 
 
-    inline std::vector<TestBase *> &getTests() {
-        static std::vector<TestBase *> tests;
-        return tests;
-    }
+
 
     inline int runTests(std::ostream &output) {
         output << "Running "
@@ -264,6 +299,50 @@ namespace MereTDD {
                 std::string_view(actual),
                 line);
     }
+    inline void confirm (
+            float expected,
+            float actual,
+            int line)
+    {
+        if (actual < (expected - 0.0001f) ||
+            actual > (expected + 0.0001f))
+        {
+            throw ActualConfirmException(
+                    std::to_string(expected),
+                    std::to_string(actual),
+                    line);
+        }
+    }
+
+    inline void confirm (
+            double expected,
+            double actual,
+            int line)
+    {
+        if (actual < (expected - 0.000001) ||
+            actual > (expected + 0.000001))
+        {
+            throw ActualConfirmException(
+                    std::to_string(expected),
+                    std::to_string(actual),
+                    line);
+        }
+    }
+
+    inline void confirm (
+            long double expected,
+            long double actual,
+            int line)
+    {
+        if (actual < (expected - 0.000001) ||
+            actual > (expected + 0.000001))
+        {
+            throw ActualConfirmException(
+                    std::to_string(expected),
+                    std::to_string(actual),
+                    line);
+        }
+    }
 
 } // namespace MereTDD
 
@@ -275,9 +354,7 @@ class MERETDD_CLASS : public MereTDD::TestBase \
 public: \
     MERETDD_CLASS (std::string_view name) \
     : TestBase(name) \
-    { \
-        MereTDD::getTests().push_back(this); \
-    } \
+    { } \
     void run () override; \
 }; \
 } /* end of unnamed namespace */ \
@@ -286,30 +363,17 @@ void MERETDD_CLASS::run ()
 
 #define TEST_EX( testName, exceptionType ) \
 namespace { \
-class MERETDD_CLASS : public MereTDD::TestBase \
+class MERETDD_CLASS : public MereTDD::TestExBase<exceptionType> \
 { \
 public: \
-    MERETDD_CLASS (std::string_view name) \
-    : TestBase(name) \
-    { \
-        MereTDD::getTests().push_back(this); \
-    } \
-    void runEx () override \
-    { \
-        try \
-        { \
-            run(); \
-        } \
-        catch (exceptionType const &) \
-        { \
-            return; \
-        } \
-        throw MereTDD::MissingException(#exceptionType); \
-    } \
+    MERETDD_CLASS (std::string_view name, \
+        std::string_view exceptionName) \
+    : TestExBase(name, exceptionName) \
+    { } \
     void run () override; \
 }; \
 } /* end of unnamed namespace */ \
-MERETDD_CLASS MERETDD_INSTANCE(testName); \
+MERETDD_CLASS MERETDD_INSTANCE(testName, #exceptionType); \
 void MERETDD_CLASS::run ()
 
 #define CONFIRM_FALSE( actual ) \
